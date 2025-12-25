@@ -11,10 +11,47 @@ export class EmployeesService {
     return this.prisma.employee.create({ data: createEmployeeDto });
   }
 
-  findAll(companyId: string) {
+  findAll(companyId?: string) {
+    return this.prisma.employee.findMany({
+      where: { 
+        ...(companyId ? { company_id: companyId } : {}),
+        deleted: false 
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            wallet_address: true,
+            email: true,
+            role: true,
+          }
+        }
+      }
+    });
+  }
+
+  findByCompanyId(companyId: string) {
     return this.prisma.employee.findMany({
       where: { company_id: companyId, deleted: false },
+      include: {
+        user: {
+          select: {
+            id: true,
+            wallet_address: true,
+            email: true,
+            role: true,
+          }
+        }
+      }
     });
+  }
+
+  async findCompanyByUserId(userId: string) {
+    const employee = await this.prisma.employee.findFirst({
+      where: { user_id: userId, deleted: false },
+      select: { company_id: true }
+    });
+    return employee?.company_id;
   }
 
   findOne(id: string) {

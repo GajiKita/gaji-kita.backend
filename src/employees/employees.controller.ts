@@ -43,11 +43,32 @@ export class EmployeesController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'List all employees' })
+  @Roles(ROLES.ADMIN)
+  @ApiOperation({ summary: 'List all employees (ADMIN only)' })
   @ApiQuery({ name: 'companyId', required: false, description: 'Filter employees by company UUID' })
   @ApiResponse({ status: 200, description: 'Return list of employees.' })
-  findAll(@Query('companyId') companyId: string) {
+  findAll(@Query('companyId') companyId?: string) {
     return this.employeesService.findAll(companyId);
+  }
+
+  @Get('company/:companyId')
+  @Roles(ROLES.ADMIN)
+  @ApiOperation({ summary: 'List employees by company ID (ADMIN only)' })
+  @ApiResponse({ status: 200, description: 'Return list of employees for the company.' })
+  findByCompany(@Param('companyId') companyId: string) {
+    return this.employeesService.findByCompanyId(companyId);
+  }
+
+  @Get('me/company')
+  @Roles(ROLES.HR)
+  @ApiOperation({ summary: 'List employees for HR current company (HR only)' })
+  @ApiResponse({ status: 200, description: 'Return list of employees for the HR company.' })
+  async findMyCompanyEmployees(@Req() req) {
+    const companyId = await this.employeesService.findCompanyByUserId(req.user.id);
+    if (!companyId) {
+      throw new ForbiddenException('HR user not associated with any company');
+    }
+    return this.employeesService.findByCompanyId(companyId);
   }
 
   @Get(':id')
