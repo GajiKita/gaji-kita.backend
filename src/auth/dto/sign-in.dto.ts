@@ -12,7 +12,7 @@ export class SignInDto {
   @IsNotEmpty()
   signature: string;
 
-  @ApiProperty({ example: 'Sign this message to login', description: 'The signed message' })
+  @ApiProperty({ example: 'I am doing the signature on Kam, 25 Desember 2025 20:40', description: 'The signed message' })
   @IsString()
   @IsNotEmpty()
   message: string;

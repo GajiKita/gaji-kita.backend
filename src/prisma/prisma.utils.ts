@@ -25,7 +25,7 @@ export function ensureDatabaseUrl(): string {
     }
 
 
-    const url = `postgresql://${encode(user)}:${encode(pass)}@${host}:${port}/${encode(db)}?schema=${encode(schema)}`;
+    const url = `postgresql://${encode(user)}:${encode(pass)}@${host}:${port}/${encode(db)}?schema=${encode(schema)}&sslmode=require`;
     process.env.DATABASE_URL = url;
     return url;
 }

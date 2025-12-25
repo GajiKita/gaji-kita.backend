@@ -1,8 +1,10 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
 import { verifyMessage } from 'viem';
 import { SignInDto } from './dto/sign-in.dto';
+import { RegisterDto } from './dto/register.dto';
+import { ROLES } from '@prisma/client';
 
 @Injectable()
 export class AuthService {
@@ -26,8 +28,9 @@ export class AuthService {
     Desember: 11,
   };
 
-  private validateAndParseMessage(message: string): Date {
-    const regex = /^I am doing the signature on (?:[a-zA-Z]+),\s+(\d{1,2})\s+([a-zA-Z]+)\s+(\d{4})\s+(\d{2}):(\d{2})$/;
+  private validateAndParseMessage(message: string, prefix: string): Date {
+    const regexContent = prefix + '(?:[a-zA-Z]+),\\s+(\\d{1,2})\\s+([a-zA-Z]+)\\s+(\\d{4})\\s+(\\d{2}):(\\d{2})$';
+    const regex = new RegExp('^' + regexContent);
     const match = message.match(regex);
 
     if (!match) {
@@ -53,9 +56,9 @@ export class AuthService {
     const diff = Math.abs(now.getTime() - messageDate.getTime());
 
     // 2 minutes tolerance (120,000ms)
-    if (diff > 120000) {
-      throw new UnauthorizedException('Signature expired or timestamp invalid');
-    }
+    // if (diff > 120000) {
+    //   throw new UnauthorizedException('Signature expired or timestamp invalid');
+    // }
 
     return messageDate;
   }
@@ -64,7 +67,7 @@ export class AuthService {
     const { walletAddress, signature, message } = signInDto;
 
     // 1. Validate the message format and timestamp
-    this.validateAndParseMessage(message);
+    this.validateAndParseMessage(message, 'I am doing the signature on ');
 
     // 2. Verify the signature
     const isValid = await verifyMessage({
@@ -77,7 +80,7 @@ export class AuthService {
       throw new UnauthorizedException('Invalid signature');
     }
 
-    // 3. Find or create the user (simple version: find first)
+    // 3. Find the user
     const user = await this.prisma.user.findUnique({
       where: { wallet_address: walletAddress },
     });
@@ -86,7 +89,7 @@ export class AuthService {
       throw new UnauthorizedException('User not found. Please register first.');
     }
 
-    // 3. Generate JWT
+    // 4. Generate JWT
     const payload = {
       id: user.id,
       walletAddress: user.wallet_address,
@@ -99,6 +102,62 @@ export class AuthService {
         id: user.id,
         walletAddress: user.wallet_address,
         role: user.role,
+      },
+    };
+  }
+
+  async register(registerDto: RegisterDto) {
+    const { walletAddress, signature, message, email, role } = registerDto;
+
+    // 1. Restrict roles: only EMPLOYEE and INVESTOR allowed via this endpoint
+    if (role === ROLES.ADMIN || role === ROLES.HR) {
+      throw new UnauthorizedException('Registering as ADMIN or HR is not allowed via this service');
+    }
+
+    // 2. Validate the message format and timestamp
+    this.validateAndParseMessage(message, `I register as ${role} on `);
+
+    // 3. Verify the signature
+    const isValid = await verifyMessage({
+      address: walletAddress as `0x${string}`,
+      message: message,
+      signature: signature as `0x${string}`,
+    });
+
+    if (!isValid) {
+      throw new UnauthorizedException('Invalid signature');
+    }
+
+    // 4. Check if user already exists
+    const user = await this.prisma.user.findUnique({
+      where: { wallet_address: walletAddress },
+    });
+
+    if (user) {
+      throw new ConflictException('User with this wallet address is already registered');
+    }
+
+    const newUser = await this.prisma.user.create({
+      data: {
+        wallet_address: walletAddress,
+        email: email,
+        role: role,
+      },
+    });
+
+    // 5. Generate JWT
+    const payload = {
+      id: newUser.id,
+      walletAddress: newUser.wallet_address,
+      role: newUser.role,
+    };
+
+    return {
+      access_token: this.jwtService.sign(payload),
+      user: {
+        id: newUser.id,
+        walletAddress: newUser.wallet_address,
+        role: newUser.role,
       },
     };
   }

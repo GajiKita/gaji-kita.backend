@@ -10,6 +10,7 @@ async function bootstrap() {
     .setDescription('The GajiKita backend API description')
     .setVersion('1.0')
     .addTag('gaji-kita')
+    .addBearerAuth()
     .build();
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);

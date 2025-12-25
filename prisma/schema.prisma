@@ -40,9 +40,9 @@ enum FUND_SOURCE_TYPE {
 model User {
   id               String    @id @default(uuid())
   wallet_address   String?   @unique
-  email            String    @unique
+  email            String?   @unique
   phone            String?   @unique
-  role             ROLES
+  role             ROLES     @default(EMPLOYEE)
   created_at       DateTime  @default(now())
   updated_at       DateTime  @updatedAt
   deleted          Boolean   @default(false)
