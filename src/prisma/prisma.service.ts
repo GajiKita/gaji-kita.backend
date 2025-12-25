@@ -5,6 +5,7 @@ import { ensureDatabaseUrl } from './prisma.utils';
 
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
+  supportedToken: any;
   constructor() {
     const url = ensureDatabaseUrl();
     super({
