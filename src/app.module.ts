@@ -8,6 +8,9 @@ import { WithdrawsModule } from './withdraws/withdraws.module';
 import { FeesModule } from './fees/fees.module';
 import { RepaymentsModule } from './repayments/repayments.module';
 import { AuthModule } from './auth/auth.module';
+import { InvestorsModule } from './investors/investors.module';
+import { BlockchainModule } from './blockchain/blockchain.module';
+import { SmartContractsModule } from './smart-contracts/smart-contracts.module';
 
 @Module({
   imports: [
@@ -20,6 +23,9 @@ import { AuthModule } from './auth/auth.module';
     FeesModule,
     RepaymentsModule,
     AuthModule,
+    InvestorsModule,
+    BlockchainModule,
+    SmartContractsModule,
   ],
   controllers: [],
   providers: [],

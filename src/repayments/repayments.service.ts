@@ -22,10 +22,12 @@ export class RepaymentsService {
       },
     });
 
-    const repaymentRecords = [];
+    const repaymentRecords: any[] = [];
     for (const withdraw of withdrawsToRepay) {
       // In a real scenario, this would involve a payment gateway or blockchain transaction
-      const repayAmount = withdraw.approved_amount.toNumber() + withdraw.fee_total_amount.toNumber();
+      const approvedAmount = withdraw.approved_amount?.toNumber() ?? 0;
+      const feeTotalAmount = withdraw.fee_total_amount?.toNumber() ?? 0;
+      const repayAmount = approvedAmount + feeTotalAmount;
       
       const record = await this.prisma.repayRecord.create({
         data: {

@@ -14,6 +14,7 @@ enum ROLES {
   ADMIN
   HR
   EMPLOYEE
+  INVESTOR
 }
 
 enum WITHDRAW_STATUS {
@@ -32,7 +33,8 @@ enum FEE_MODE {
 
 enum FUND_SOURCE_TYPE {
   COMPANY_LOCK
-  AAVE
+  INVESTOR_POOL
+  DEX_SWAP
 }
 
 model User {
@@ -45,50 +47,74 @@ model User {
   updated_at       DateTime  @updatedAt
   deleted          Boolean   @default(false)
   employees        Employee[]
+  investors        Investor[]
   approvedWorkLogs EmployeeWorkLog[] @relation("ApprovedBy")
 
   @@map("users")
 }
 
 model Company {
-  id                    String              @id @default(uuid())
-  name                  String
-  address               String?
-  min_lock_percentage   Decimal
-  fee_share_company     Decimal
-  fee_share_platform    Decimal
-  created_at            DateTime            @default(now())
-  updated_at            DateTime            @updatedAt
-  deleted               Boolean             @default(false)
-  employees             Employee[]
-  payroll_cycles        PayrollCycle[]
-  company_lock_pools    CompanyLockPool[]
-  withdraw_fee_rules    WithdrawFeeRule[]
+  id                         String              @id @default(uuid())
+  name                       String
+  address                    String?
+  wallet_address             String?             @unique
+  min_lock_percentage        Decimal
+  fee_share_company          Decimal             @default(2000) // BPS: 20%
+  fee_share_platform         Decimal             @default(8000) // BPS: 80%
+  fee_share_investor         Decimal             @default(0)    // BPS: 0%
+  reward_balance             Decimal             @default(0)
+  withdrawn_rewards          Decimal             @default(0)
+  preferred_payout_token     String?
+  created_at                 DateTime            @default(now())
+  updated_at                 DateTime            @updatedAt
+  deleted                    Boolean             @default(false)
+  employees                  Employee[]
+  payroll_cycles             PayrollCycle[]
+  company_lock_pools         CompanyLockPool[]
+  withdraw_fee_rules         WithdrawFeeRule[]
 
   @@map("companies")
 }
 
+model Investor {
+  id                     String          @id @default(uuid())
+  user_id                String
+  wallet_address         String          @unique
+  deposited_amount       Decimal         @default(0)
+  reward_balance         Decimal         @default(0)
+  withdrawn_rewards      Decimal         @default(0)
+  preferred_payout_token String?
+  created_at             DateTime        @default(now())
+  updated_at             DateTime        @updatedAt
+  deleted                Boolean         @default(false)
+  user                   User            @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  withdraw_fund_sources  WithdrawFundSource[]
+
+  @@map("investors")
+}
+
 model Employee {
-  id                  String              @id @default(uuid())
-  user_id             String
-  company_id          String
-  employee_number     String?
-  position            String?
-  base_salary         Decimal
-  wallet_address      String              @unique
-  status              String?
-  sbt_token_id        String?             @unique
-  employed_started    DateTime?
-  employed_ended      DateTime?
-  created_at          DateTime            @default(now())
-  updated_at          DateTime            @updatedAt
-  deleted             Boolean             @default(false)
-  user                User                @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  company             Company             @relation(fields: [company_id], references: [id], onDelete: Cascade)
-  work_logs           EmployeeWorkLog[]
-  withdraw_limits     WithdrawLimit[]
-  withdraw_requests   WithdrawRequest[]
-  repay_records       RepayRecord[]
+  id                     String              @id @default(uuid())
+  user_id                String
+  company_id             String
+  employee_number        String?
+  position               String?
+  base_salary            Decimal
+  wallet_address         String              @unique
+  preferred_payout_token String?
+  status                 String?
+  sbt_token_id           String?             @unique
+  employed_started        DateTime?
+  employed_ended          DateTime?
+  created_at             DateTime            @default(now())
+  updated_at             DateTime            @updatedAt
+  deleted                Boolean             @default(false)
+  user                   User                @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  company                Company             @relation(fields: [company_id], references: [id], onDelete: Cascade)
+  work_logs              EmployeeWorkLog[]
+  withdraw_limits        WithdrawLimit[]
+  withdraw_requests      WithdrawRequest[]
+  repay_records          RepayRecord[]
 
   @@index([user_id])
   @@index([company_id])
@@ -104,6 +130,7 @@ model PayrollCycle {
   total_working_days Int
   created_at         DateTime            @default(now())
   updated_at         DateTime            @updatedAt
+  deleted            Boolean             @default(false)
   company            Company             @relation(fields: [company_id], references: [id], onDelete: Cascade)
   employee_work_logs EmployeeWorkLog[]
   company_lock_pools CompanyLockPool[]
@@ -123,6 +150,7 @@ model EmployeeWorkLog {
   hours_worked     Decimal
   approved_by_id   String?
   created_at       DateTime     @default(now())
+  deleted          Boolean      @default(false)
   employee         Employee     @relation(fields: [employee_id], references: [id], onDelete: Cascade)
   payroll_cycle    PayrollCycle @relation(fields: [payroll_cycle_id], references: [id], onDelete: Cascade)
   approved_by      User?        @relation("ApprovedBy", fields: [approved_by_id], references: [id], onDelete: NoAction)
@@ -144,6 +172,7 @@ model CompanyLockPool {
   unlock_tx_hash         String?
   created_at             DateTime     @default(now())
   updated_at             DateTime     @updatedAt
+  deleted                Boolean      @default(false)
   company                Company      @relation(fields: [company_id], references: [id], onDelete: Cascade)
   payroll_cycle          PayrollCycle @relation(fields: [payroll_cycle_id], references: [id], onDelete: Cascade)
 
@@ -160,6 +189,7 @@ model WithdrawFeeRule {
   base_fixed_amount                  Decimal?
   early_access_penalty_perc_per_gap  Decimal?
   created_at                         DateTime @default(now())
+  deleted                            Boolean  @default(false)
   company                            Company  @relation(fields: [company_id], references: [id], onDelete: Cascade)
 
   @@map("withdraw_fee_rules")
@@ -173,6 +203,7 @@ model WithdrawLimit {
   used_amount        Decimal
   remaining_amount   Decimal
   calculated_at      DateTime
+  deleted            Boolean      @default(false)
   employee           Employee     @relation(fields: [employee_id], references: [id], onDelete: Cascade)
   payroll_cycle      PayrollCycle @relation(fields: [payroll_cycle_id], references: [id], onDelete: Cascade)
 
@@ -191,10 +222,13 @@ model WithdrawRequest {
   fee_total_amount           Decimal?
   company_fee_amount         Decimal?
   platform_fee_amount        Decimal?
+  investor_fee_amount        Decimal?
   extra_liquidity_fee_amount Decimal?
   status                     WITHDRAW_STATUS       @default(PENDING)
+  tx_hash                    String?
   created_at                 DateTime              @default(now())
   updated_at                 DateTime              @updatedAt
+  deleted                    Boolean               @default(false)
   employee                   Employee              @relation(fields: [employee_id], references: [id], onDelete: Cascade)
   payroll_cycle              PayrollCycle          @relation(fields: [payroll_cycle_id], references: [id], onDelete: Cascade)
   fund_sources               WithdrawFundSource[]
@@ -210,11 +244,15 @@ model WithdrawFundSource {
   withdraw_request_id String
   source_type         FUND_SOURCE_TYPE
   amount              Decimal
+  investor_id         String?
   tx_hash             String?
   created_at          DateTime        @default(now())
+  deleted             Boolean         @default(false)
   withdraw_request    WithdrawRequest @relation(fields: [withdraw_request_id], references: [id], onDelete: Cascade)
+  investor            Investor?       @relation(fields: [investor_id], references: [id])
 
   @@index([withdraw_request_id])
+  @@index([investor_id])
   @@map("withdraw_fund_sources")
 }
 
@@ -227,6 +265,7 @@ model RepayRecord {
   repay_source        String?
   tx_hash             String?
   repaid_at           DateTime?
+  deleted             Boolean         @default(false)
   withdraw_request    WithdrawRequest @relation(fields: [withdraw_request_id], references: [id], onDelete: Cascade)
   employee            Employee        @relation(fields: [employee_id], references: [id], onDelete: Cascade)
   payroll_cycle       PayrollCycle    @relation(fields: [payroll_cycle_id], references: [id], onDelete: Cascade)
@@ -234,4 +273,29 @@ model RepayRecord {
   @@index([employee_id])
   @@index([payroll_cycle_id])
   @@map("repay_records")
+}
+
+model SmartContract {
+  id               String   @id @default(uuid())
+  name             String
+  contract_address String
+  chain_id         Int
+  abi              Json
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+  deleted          Boolean  @default(false)
+
+  @@map("smart_contracts")
+}
+
+model SupportedToken {
+  address    String   @id
+  symbol     String
+  name       String
+  decimals   Int
+  is_active  Boolean  @default(true)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@map("supported_tokens")
 }

@@ -32,4 +32,11 @@ export class CompaniesService {
       data: { deleted: true },
     });
   }
+
+  updatePreferredToken(id: string, tokenAddress: string) {
+    return this.prisma.company.update({
+      where: { id },
+      data: { preferred_payout_token: tokenAddress },
+    });
+  }
 }

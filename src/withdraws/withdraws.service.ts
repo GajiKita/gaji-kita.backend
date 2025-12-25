@@ -91,7 +91,7 @@ export class WithdrawsService {
 
     if(!lockPool) throw new NotFoundException('Company lock pool not found');
 
-    const sources = [];
+    const sources: any[] = [];
     let remainingToFund = approvedAmount;
     
     // 1. Deduct from company lock pool
@@ -109,26 +109,82 @@ export class WithdrawsService {
         remainingToFund -= fromCompanyPool;
     }
 
-    // 2. If insufficient, use AAVE
+    // 2. If insufficient, use INVESTOR_POOL or DEX_SWAP (conceptually)
     if (remainingToFund > 0) {
-        sources.push({
-            source_type: FUND_SOURCE_TYPE.AAVE,
-            amount: remainingToFund,
+        // Find an investor with enough deposited amount (simple picking for now)
+        const investor = await this.prisma.investor.findFirst({
+            where: { deposited_amount: { gte: remainingToFund } }
         });
+
+        if (investor) {
+            sources.push({
+                source_type: FUND_SOURCE_TYPE.INVESTOR_POOL,
+                amount: remainingToFund,
+                investor_id: investor.id,
+            });
+            await this.prisma.investor.update({
+                where: { id: investor.id },
+                data: { deposited_amount: { decrement: remainingToFund } }
+            });
+        } else {
+            // Fallback to DEX_SWAP
+            sources.push({
+                source_type: FUND_SOURCE_TYPE.DEX_SWAP,
+                amount: remainingToFund,
+            });
+        }
     }
 
-    // 3. Update withdraw request and create fund sources
+    // 3. Calculate and distribute fees
+    const daysWorked = await this.prisma.employeeWorkLog.count({
+        where: {
+          employee_id: request.employee_id,
+          payroll_cycle_id: request.payroll_cycle_id,
+          approved_by_id: { not: null },
+        },
+    });
+    const progressRatio = daysWorked / request.payroll_cycle.total_working_days;
+    const feeBreakdown = await this.feesService.calculateFee(
+        request.employee.company_id,
+        approvedAmount,
+        progressRatio,
+    );
+
+    // Update company and investor reward balances
+    await (this.prisma.company as any).update({
+        where: { id: request.employee.company_id },
+        data: { reward_balance: { increment: feeBreakdown.company_fee } }
+    });
+
+    // Simple investor fee distribution (pro-rata would be better, but simplified for now)
+    if (feeBreakdown.investor_fee > 0) {
+        const topInvestor = await this.prisma.investor.findFirst({
+            where: { deleted: false }
+        });
+        if (topInvestor) {
+            await this.prisma.investor.update({
+                where: { id: topInvestor.id },
+                data: { reward_balance: { increment: feeBreakdown.investor_fee } }
+            });
+        }
+    }
+
+    // 4. Update withdraw request and create fund sources
     const updatedRequest = await this.prisma.withdrawRequest.update({
         where: { id: requestId },
         data: {
-            status: WITHDRAW_STATUS.PAID, // Assuming transfer happens instantly
+            status: WITHDRAW_STATUS.PAID,
             approved_amount: approvedAmount,
+            fee_total_amount: feeBreakdown.fee_total,
+            company_fee_amount: feeBreakdown.company_fee,
+            platform_fee_amount: feeBreakdown.platform_fee,
+            investor_fee_amount: feeBreakdown.investor_fee,
             extra_liquidity_fee_amount: extraAaveFee,
             fund_sources: { create: sources }
         }
     });
 
-    // 4. Update withdraw limit
+    // 5. Update withdraw limit
     await this.prisma.withdrawLimit.update({
         where: {
             employee_id_payroll_cycle_id: {

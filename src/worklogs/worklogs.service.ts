@@ -1,13 +1,36 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateWorklogDto } from './dto/create-worklog.dto';
+import { BlockchainService } from '../blockchain/blockchain.service';
+import { Address } from 'viem';
 
 @Injectable()
 export class WorklogsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private blockchainService: BlockchainService,
+  ) {}
 
   create(createWorklogDto: CreateWorklogDto) {
     return this.prisma.employeeWorkLog.create({ data: createWorklogDto });
+  }
+
+  async checkIn(employeeId: string, payrollCycleId: string) {
+    return this.prisma.employeeWorkLog.create({
+      data: {
+        employee_id: employeeId,
+        payroll_cycle_id: payrollCycleId,
+        date: new Date(),
+        hours_worked: 0, // Initial state
+      },
+    });
+  }
+
+  async checkOut(worklogId: string, hours: number) {
+    return this.prisma.employeeWorkLog.update({
+      where: { id: worklogId },
+      data: { hours_worked: hours },
+    });
   }
 
   findAll(employeeId: string) {
@@ -80,6 +103,19 @@ export class WorklogsService {
       },
     });
 
-    return { worklog, withdrawLimit };
+    // Prepare blockchain sync data
+    const syncHex = this.blockchainService.encodeUpdateEmployeeDaysWorked(
+      employee.wallet_address as Address,
+      BigInt(daysWorked),
+    );
+
+    return {
+      worklog,
+      withdrawLimit,
+      blockchainSync: {
+        to: this.blockchainService.getContractAddress(),
+        data: syncHex,
+      },
+    };
   }
 }

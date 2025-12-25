@@ -23,8 +23,9 @@ export class FeesService {
       throw new NotFoundException('Fee rule or company not found');
     }
 
-    let feeTotal = 0;
+    const BPS_DENOMINATOR = 10000;
     const gapRatio = 1 - progressRatio;
+    let feeTotal = 0;
 
     if (feeRule.fee_mode === FEE_MODE.PERCENTAGE) {
       const earlyAccessPenalty =
@@ -54,15 +55,16 @@ export class FeesService {
       feeTotal = baseFixedAmount + percentageFee;
     }
 
-    const companyFee =
-      feeTotal * (company.fee_share_company.toNumber() / 100);
-    const platformFee =
-      feeTotal * (company.fee_share_platform.toNumber() / 100);
+    // Distribute fee according to BPS shares in Company model
+    const platformFee = (feeTotal * company.fee_share_platform.toNumber()) / BPS_DENOMINATOR;
+    const companyFee = (feeTotal * company.fee_share_company.toNumber()) / BPS_DENOMINATOR;
+    const investorFee = (feeTotal * company.fee_share_investor.toNumber()) / BPS_DENOMINATOR;
 
     return {
       fee_total: feeTotal,
-      company_fee: companyFee,
       platform_fee: platformFee,
+      company_fee: companyFee,
+      investor_fee: investorFee,
     };
   }
 }

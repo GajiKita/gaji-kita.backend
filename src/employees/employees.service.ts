@@ -34,4 +34,11 @@ export class EmployeesService {
       data: { deleted: true },
     });
   }
+
+  updatePreferredToken(id: string, tokenAddress: string) {
+    return this.prisma.employee.update({
+      where: { id },
+      data: { preferred_payout_token: tokenAddress },
+    });
+  }
 }
