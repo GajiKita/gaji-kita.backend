@@ -4,11 +4,15 @@ import { CreateWorklogDto } from './dto/create-worklog.dto';
 import { BlockchainService } from '../blockchain/blockchain.service';
 import { Address } from 'viem';
 
+import { ROLES } from '@prisma/client';
+import { AuditLogsService } from '../audit-logs/audit-logs.service';
+
 @Injectable()
 export class WorklogsService {
   constructor(
     private prisma: PrismaService,
     private blockchainService: BlockchainService,
+    private auditLogsService: AuditLogsService,
   ) {}
 
   create(createWorklogDto: CreateWorklogDto) {
@@ -108,6 +112,20 @@ export class WorklogsService {
       employee.wallet_address as Address,
       BigInt(daysWorked),
     );
+
+    // 5. Audit Log
+    await this.auditLogsService.log({
+      action: 'APPROVE_WORKLOG',
+      entity: 'EmployeeWorkLog',
+      entity_id: worklogId,
+      user_id: approverId,
+      details: {
+        employeeId: worklog.employee_id,
+        payrollCycleId: worklog.payroll_cycle_id,
+        hoursWorked: worklog.hours_worked.toNumber(),
+        newDaysWorked: daysWorked,
+      },
+    });
 
     return {
       worklog,

@@ -11,6 +11,9 @@ import { AuthModule } from './auth/auth.module';
 import { InvestorsModule } from './investors/investors.module';
 import { BlockchainModule } from './blockchain/blockchain.module';
 import { SmartContractsModule } from './smart-contracts/smart-contracts.module';
+import { AuditLogsModule } from './audit-logs/audit-logs.module';
+import { PayrollModule } from './payroll/payroll.module';
+import { AnalyticsModule } from './analytics/analytics.module';
 
 @Module({
   imports: [
@@ -26,6 +29,9 @@ import { SmartContractsModule } from './smart-contracts/smart-contracts.module';
     InvestorsModule,
     BlockchainModule,
     SmartContractsModule,
+    AuditLogsModule,
+    PayrollModule,
+    AnalyticsModule,
   ],
   controllers: [],
   providers: [],

@@ -49,6 +49,7 @@ model User {
   employees        Employee[]
   investors        Investor[]
   approvedWorkLogs EmployeeWorkLog[] @relation("ApprovedBy")
+  audit_logs       AuditLog[]
 
   @@map("users")
 }
@@ -298,4 +299,17 @@ model SupportedToken {
   updated_at DateTime @updatedAt
 
   @@map("supported_tokens")
+}
+
+model AuditLog {
+  id          String   @id @default(uuid())
+  action      String
+  entity      String
+  entity_id   String?
+  user_id     String?
+  details     Json?
+  created_at  DateTime @default(now())
+  user        User?    @relation(fields: [user_id], references: [id])
+
+  @@map("audit_logs")
 }
