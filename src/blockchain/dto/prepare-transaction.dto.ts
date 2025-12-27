@@ -1,4 +1,4 @@
-import { IsNumber, IsString, IsNotEmpty } from 'class-validator';
+import { IsNumber, IsString, IsNotEmpty, IsOptional } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class PrepareTransactionDto {
@@ -7,8 +7,8 @@ export class PrepareTransactionDto {
   @IsNotEmpty()
   amount: number;
 
-  @ApiProperty({ example: 'cid-123', description: 'Context identifier or receipt ID' })
+  @ApiProperty({ example: 'cid-123', description: 'Context identifier or receipt ID', required: false })
   @IsString()
-  @IsNotEmpty()
-  cid: string;
+  @IsOptional()
+  cid?: string;
 }

@@ -65,13 +65,15 @@ export class AuthService {
 
   async signIn(signInDto: SignInDto) {
     const { walletAddress, signature, message } = signInDto;
+    // Normalize wallet address to lowercase for case-insensitive matching
+    const normalizedAddress = walletAddress.toLowerCase();
 
     // 1. Validate the message format and timestamp
     this.validateAndParseMessage(message, 'I am doing the signature on ');
 
     // 2. Verify the signature
     const isValid = await verifyMessage({
-      address: walletAddress as `0x${string}`,
+      address: normalizedAddress as `0x${string}`,
       message: message,
       signature: signature as `0x${string}`,
     });
@@ -82,7 +84,7 @@ export class AuthService {
 
     // 3. Find the user
     const user = await this.prisma.user.findUnique({
-      where: { wallet_address: walletAddress },
+      where: { wallet_address: normalizedAddress },
     });
 
     if (!user) {
@@ -92,7 +94,7 @@ export class AuthService {
     // 4. Generate JWT
     const payload = {
       id: user.id,
-      walletAddress: user.wallet_address,
+      walletAddress: normalizedAddress,
       role: user.role,
     };
 
@@ -100,7 +102,7 @@ export class AuthService {
       access_token: this.jwtService.sign(payload),
       user: {
         id: user.id,
-        walletAddress: user.wallet_address,
+        walletAddress: normalizedAddress,
         role: user.role,
       },
     };
@@ -108,6 +110,8 @@ export class AuthService {
 
   async register(registerDto: RegisterDto) {
     const { walletAddress, signature, message, email, role } = registerDto;
+    // Normalize wallet address to lowercase for case-insensitive matching
+    const normalizedAddress = walletAddress.toLowerCase();
 
     // 1. Restrict roles: only EMPLOYEE and INVESTOR allowed via this endpoint
     if (role === ROLES.ADMIN || role === ROLES.HR) {
@@ -119,7 +123,7 @@ export class AuthService {
 
     // 3. Verify the signature
     const isValid = await verifyMessage({
-      address: walletAddress as `0x${string}`,
+      address: normalizedAddress as `0x${string}`,
       message: message,
       signature: signature as `0x${string}`,
     });
@@ -130,7 +134,7 @@ export class AuthService {
 
     // 4. Check if user already exists
     const user = await this.prisma.user.findUnique({
-      where: { wallet_address: walletAddress },
+      where: { wallet_address: normalizedAddress },
     });
 
     if (user) {
@@ -139,7 +143,7 @@ export class AuthService {
 
     const newUser = await this.prisma.user.create({
       data: {
-        wallet_address: walletAddress,
+        wallet_address: normalizedAddress,
         email: email,
         role: role,
       },

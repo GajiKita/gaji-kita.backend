@@ -171,6 +171,7 @@ model CompanyLockPool {
   available_amount       Decimal
   locked_tx_hash         String?
   unlock_tx_hash         String?
+  ipfs_cid               String?
   created_at             DateTime     @default(now())
   updated_at             DateTime     @updatedAt
   deleted                Boolean      @default(false)
@@ -227,6 +228,7 @@ model WithdrawRequest {
   extra_liquidity_fee_amount Decimal?
   status                     WITHDRAW_STATUS       @default(PENDING)
   tx_hash                    String?
+  ipfs_cid                   String?
   created_at                 DateTime              @default(now())
   updated_at                 DateTime              @updatedAt
   deleted                    Boolean               @default(false)

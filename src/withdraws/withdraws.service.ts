@@ -8,11 +8,14 @@ import { FeesService } from '../fees/fees.service';
 import { CreateWithdrawRequestDto } from './dto/create-withdraw-request.dto';
 import { FUND_SOURCE_TYPE, WITHDRAW_STATUS } from '@prisma/client';
 
+import { PinataService } from '../pinata/pinata.service';
+
 @Injectable()
 export class WithdrawsService {
   constructor(
     private prisma: PrismaService,
     private feesService: FeesService,
+    private pinataService: PinataService,
   ) {}
 
   async simulate(
@@ -65,11 +68,34 @@ export class WithdrawsService {
     };
   }
 
-  createRequest(createDto: CreateWithdrawRequestDto) {
+  async createRequest(createDto: CreateWithdrawRequestDto) {
+    // 1. Fetch some details for the metadata
+    const employee = await this.prisma.employee.findUnique({
+      where: { id: createDto.employee_id },
+      include: { user: true },
+    });
+
+    // 2. Pin metadata to IPFS
+    const metadata = {
+      type: 'withdrawSalary',
+      employee_id: createDto.employee_id,
+      wallet_address: employee?.wallet_address,
+      amount: createDto.requested_amount,
+      payroll_cycle_id: createDto.payroll_cycle_id,
+      timestamp: new Date().toISOString(),
+    };
+
+    const cid = await this.pinataService.pinJSON(
+      metadata,
+      `Withdrawal Request - ${employee?.user?.wallet_address || 'Unknown'} - ${new Date().getTime()}`,
+    );
+
+    // 3. Create the request in DB
     return this.prisma.withdrawRequest.create({
       data: {
         ...createDto,
         status: WITHDRAW_STATUS.PENDING,
+        ipfs_cid: cid,
       },
     });
   }

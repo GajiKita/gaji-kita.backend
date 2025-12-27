@@ -61,12 +61,13 @@ export class WithdrawsController {
     const request = await this.withdrawsService.createRequest(createRequestDto);
     
     // 2. Prepare hex data for withdrawSalary(_cid)
-    // For now, we use the request ID as the CID placeholder
-    const hexData = this.blockchainService.encodeWithdrawSalary(request.id);
+    const hexData = this.blockchainService.encodeWithdrawSalary(request.ipfs_cid!);
     
     return {
       to: this.blockchainService.getContractAddress(),
       data: hexData,
+      id: request.id,
+      cid: request.ipfs_cid,
     };
   }
 

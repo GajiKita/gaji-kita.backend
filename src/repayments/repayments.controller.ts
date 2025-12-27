@@ -8,6 +8,7 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagg
 import { BlockchainService } from '../blockchain/blockchain.service';
 import { TransactionResponse } from '../blockchain/dto/transaction-response.dto';
 import { PrepareTransactionDto } from '../blockchain/dto/prepare-transaction.dto';
+import { PinataService } from '../pinata/pinata.service';
 
 @ApiTags('repayments')
 @ApiBearerAuth()
@@ -18,6 +19,7 @@ export class RepaymentsController {
   constructor(
     private readonly repaymentsService: RepaymentsService,
     private readonly blockchainService: BlockchainService,
+    private readonly pinataService: PinataService,
   ) {}
 
   @Post('process-cycle/:cycleId')
@@ -32,14 +34,24 @@ export class RepaymentsController {
   @Post('prepare-platform-fee-withdrawal')
   @ApiOperation({ summary: 'Prepare transaction data for withdrawing platform fees' })
   @ApiResponse({ status: 200, description: 'Return transaction data.', type: TransactionResponse })
-  preparePlatformFeeWithdrawal(@Body() prepareDto: PrepareTransactionDto) {
+  async preparePlatformFeeWithdrawal(@Body() prepareDto: PrepareTransactionDto) {
+    const cid = await this.pinataService.pinJSON(
+      {
+        type: 'withdrawPlatformFee',
+        amount: prepareDto.amount,
+        timestamp: new Date().toISOString(),
+      },
+      `Platform Fee Withdrawal - ${new Date().getTime()}`,
+    );
+
     const hexData = this.blockchainService.encodeWithdrawPlatformFee(
       BigInt(prepareDto.amount),
-      prepareDto.cid,
+      cid,
     );
     return {
       to: this.blockchainService.getContractAddress(),
       data: hexData,
+      cid: cid,
     };
   }
 }

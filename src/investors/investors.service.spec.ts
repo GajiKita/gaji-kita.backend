@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { InvestorsService } from './investors.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { NotFoundException } from '@nestjs/common';
 
 describe('InvestorsService', () => {
   let service: InvestorsService;
@@ -31,20 +32,29 @@ describe('InvestorsService', () => {
     expect(service).toBeDefined();
   });
 
-  describe('create', () => {
-    it('should create an investor', async () => {
-      const dto = { user_id: '1', wallet_address: '0x123' };
-      mockPrismaService.investor.create.mockResolvedValue(dto);
-      expect(await service.create(dto)).toEqual(dto);
-      expect(mockPrismaService.investor.create).toHaveBeenCalledWith({ data: dto });
+  it('should create an investor', async () => {
+    const dto = { user_id: 'u1', wallet_address: '0xinv' };
+    await service.create(dto as any);
+    expect(prisma.investor.create).toHaveBeenCalledWith({ data: dto });
+  });
+
+  it('should find all investors', async () => {
+    await service.findAll();
+    expect(prisma.investor.findMany).toHaveBeenCalledWith({
+      where: { deleted: false },
+      include: { user: true },
     });
   });
 
-  describe('findAll', () => {
-    it('should return all investors', async () => {
-      const investors = [{ id: '1', wallet_address: '0x123' }];
-      mockPrismaService.investor.findMany.mockResolvedValue(investors);
-      expect(await service.findAll()).toEqual(investors);
-    });
+  it('should find one investor', async () => {
+    const id = '123';
+    mockPrismaService.investor.findUnique.mockResolvedValue({ id });
+    const result = await service.findOne(id);
+    expect(result).toEqual({ id });
+  });
+
+  it('should throw NotFoundException if investor not found', async () => {
+    mockPrismaService.investor.findUnique.mockResolvedValue(null);
+    await expect(service.findOne('123')).rejects.toThrow(NotFoundException);
   });
 });

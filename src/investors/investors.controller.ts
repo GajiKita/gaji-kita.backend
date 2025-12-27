@@ -24,6 +24,7 @@ import { PrepareTransactionDto } from '../blockchain/dto/prepare-transaction.dto
 import { UpdatePreferredTokenDto } from '../blockchain/dto/update-preferred-token.dto';
 import { Address } from 'viem';
 import { Req } from '@nestjs/common';
+import { PinataService } from '../pinata/pinata.service';
 
 @ApiTags('investors')
 @ApiBearerAuth()
@@ -34,6 +35,7 @@ export class InvestorsController {
   constructor(
     private readonly investorsService: InvestorsService,
     private readonly blockchainService: BlockchainService,
+    private readonly pinataService: PinataService,
   ) {}
 
   @Post()
@@ -82,14 +84,24 @@ export class InvestorsController {
   @Roles(ROLES.ADMIN, ROLES.INVESTOR)
   @ApiOperation({ summary: 'Prepare transaction data for depositing investor liquidity' })
   @ApiResponse({ status: 200, description: 'Return transaction data.', type: TransactionResponse })
-  prepareDepositLiquidity(@Body() prepareDto: PrepareTransactionDto) {
+  async prepareDepositLiquidity(@Body() prepareDto: PrepareTransactionDto) {
+    const cid = await this.pinataService.pinJSON(
+      {
+        type: 'depositInvestorLiquidity',
+        amount: prepareDto.amount,
+        timestamp: new Date().toISOString(),
+      },
+      `Investor Deposit - ${new Date().getTime()}`,
+    );
+
     const hexData = this.blockchainService.encodeDepositInvestorLiquidity(
       BigInt(prepareDto.amount),
-      prepareDto.cid,
+      cid,
     );
     return {
       to: this.blockchainService.getContractAddress(),
       data: hexData,
+      cid: cid,
     };
   }
 
@@ -97,14 +109,24 @@ export class InvestorsController {
   @Roles(ROLES.ADMIN, ROLES.INVESTOR)
   @ApiOperation({ summary: 'Prepare transaction data for withdrawing investor rewards' })
   @ApiResponse({ status: 200, description: 'Return transaction data.', type: TransactionResponse })
-  prepareWithdrawReward(@Body() prepareDto: PrepareTransactionDto) {
+  async prepareWithdrawReward(@Body() prepareDto: PrepareTransactionDto) {
+    const cid = await this.pinataService.pinJSON(
+      {
+        type: 'withdrawInvestorReward',
+        amount: prepareDto.amount,
+        timestamp: new Date().toISOString(),
+      },
+      `Investor Reward Withdrawal - ${new Date().getTime()}`,
+    );
+
     const hexData = this.blockchainService.encodeWithdrawInvestorReward(
       BigInt(prepareDto.amount),
-      prepareDto.cid,
+      cid,
     );
     return {
       to: this.blockchainService.getContractAddress(),
       data: hexData,
+      cid: cid,
     };
   }
 

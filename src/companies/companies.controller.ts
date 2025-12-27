@@ -22,6 +22,7 @@ import { TransactionResponse } from '../blockchain/dto/transaction-response.dto'
 import { PrepareTransactionDto } from '../blockchain/dto/prepare-transaction.dto';
 import { UpdatePreferredTokenDto } from '../blockchain/dto/update-preferred-token.dto';
 import { Address } from 'viem';
+import { PinataService } from '../pinata/pinata.service';
 
 @ApiTags('companies')
 @ApiBearerAuth()
@@ -32,6 +33,7 @@ export class CompaniesController {
   constructor(
     private readonly companiesService: CompaniesService,
     private readonly blockchainService: BlockchainService,
+    private readonly pinataService: PinataService,
   ) {}
 
   @Post()
@@ -77,14 +79,24 @@ export class CompaniesController {
   @Roles(ROLES.ADMIN) // In a real app, this could also be a specific company role
   @ApiOperation({ summary: 'Prepare transaction data for locking company liquidity' })
   @ApiResponse({ status: 200, description: 'Return transaction data.', type: TransactionResponse })
-  prepareLockLiquidity(@Body() prepareDto: PrepareTransactionDto) {
+  async prepareLockLiquidity(@Body() prepareDto: PrepareTransactionDto) {
+    const cid = await this.pinataService.pinJSON(
+      {
+        type: 'lockCompanyLiquidity',
+        amount: prepareDto.amount,
+        timestamp: new Date().toISOString(),
+      },
+      `Lock Liquidity - ${new Date().getTime()}`,
+    );
+
     const hexData = this.blockchainService.encodeLockCompanyLiquidity(
       BigInt(prepareDto.amount),
-      prepareDto.cid,
+      cid,
     );
     return {
       to: this.blockchainService.getContractAddress(),
       data: hexData,
+      cid: cid,
     };
   }
 
@@ -92,14 +104,24 @@ export class CompaniesController {
   @Roles(ROLES.ADMIN)
   @ApiOperation({ summary: 'Prepare transaction data for withdrawing company rewards' })
   @ApiResponse({ status: 200, description: 'Return transaction data.', type: TransactionResponse })
-  prepareWithdrawReward(@Body() prepareDto: PrepareTransactionDto) {
+  async prepareWithdrawReward(@Body() prepareDto: PrepareTransactionDto) {
+    const cid = await this.pinataService.pinJSON(
+      {
+        type: 'withdrawCompanyReward',
+        amount: prepareDto.amount,
+        timestamp: new Date().toISOString(),
+      },
+      `Withdraw Company Reward - ${new Date().getTime()}`,
+    );
+
     const hexData = this.blockchainService.encodeWithdrawCompanyReward(
       BigInt(prepareDto.amount),
-      prepareDto.cid,
+      cid,
     );
     return {
       to: this.blockchainService.getContractAddress(),
       data: hexData,
+      cid: cid,
     };
   }
 

@@ -14,6 +14,7 @@ import { SmartContractsModule } from './smart-contracts/smart-contracts.module';
 import { AuditLogsModule } from './audit-logs/audit-logs.module';
 import { PayrollModule } from './payroll/payroll.module';
 import { AnalyticsModule } from './analytics/analytics.module';
+import { PinataModule } from './pinata/pinata.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { AnalyticsModule } from './analytics/analytics.module';
     AuditLogsModule,
     PayrollModule,
     AnalyticsModule,
+    PinataModule,
   ],
   controllers: [],
   providers: [],

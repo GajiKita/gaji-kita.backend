@@ -2,18 +2,15 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { FeesService } from './fees.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { FEE_MODE } from '@prisma/client';
+import { Decimal } from '@prisma/client/runtime/library';
 
 describe('FeesService', () => {
   let service: FeesService;
   let prisma: PrismaService;
 
   const mockPrismaService = {
-    withdrawFeeRule: {
-      findUnique: jest.fn(),
-    },
-    company: {
-      findUnique: jest.fn(),
-    },
+    withdrawFeeRule: { findUnique: jest.fn() },
+    company: { findUnique: jest.fn() },
   };
 
   beforeEach(async () => {
@@ -32,37 +29,26 @@ describe('FeesService', () => {
     expect(service).toBeDefined();
   });
 
-  describe('calculateFee', () => {
-    it('should calculate percentage fee correctly', async () => {
-      const companyId = 'co1';
-      const requestedAmount = 1000;
-      const progressRatio = 0.5;
-
-      mockPrismaService.withdrawFeeRule.findUnique.mockResolvedValue({
-        fee_mode: FEE_MODE.PERCENTAGE,
-        base_percentage: { toNumber: () => 1 },
-        early_access_penalty_perc_per_gap: { toNumber: () => 2 },
-        max_percentage: { toNumber: () => 10 },
-      });
-
-      mockPrismaService.company.findUnique.mockResolvedValue({
-        id: companyId,
-        fee_share_platform: { toNumber: () => 8000 },
-        fee_share_company: { toNumber: () => 2000 },
-        fee_share_investor: { toNumber: () => 0 },
-      });
-
-      const result = await service.calculateFee(companyId, requestedAmount, progressRatio);
-      
-      // gapRatio = 0.5
-      // dynamicPercentage = 1 + 0.5 * 2 = 2%
-      // feeTotal = 1000 * 0.02 = 20
-      // platformFee = 20 * 0.8 = 16
-      // companyFee = 20 * 0.2 = 4
-      
-      expect(result.fee_total).toBe(20);
-      expect(result.platform_fee).toBe(16);
-      expect(result.company_fee).toBe(4);
+  it('should calculate percentage fee correctly', async () => {
+    mockPrismaService.withdrawFeeRule.findUnique.mockResolvedValue({
+      fee_mode: FEE_MODE.PERCENTAGE,
+      base_percentage: new Decimal(2),
+      early_access_penalty_perc_per_gap: new Decimal(1),
+      max_percentage: new Decimal(5),
     });
+    mockPrismaService.company.findUnique.mockResolvedValue({
+      fee_share_platform: new Decimal(7000), // 70%
+      fee_share_company: new Decimal(2000), // 20%
+      fee_share_investor: new Decimal(1000), // 10%
+    });
+
+    const result = await service.calculateFee('c1', 1000, 0.5); // gapRatio = 0.5
+
+    // 2 + 0.5 * 1 = 2.5%
+    // 1000 * 0.025 = 25
+    expect(result.fee_total).toBe(25);
+    expect(result.platform_fee).toBe(17.5);
+    expect(result.company_fee).toBe(5);
+    expect(result.investor_fee).toBe(2.5);
   });
 });
