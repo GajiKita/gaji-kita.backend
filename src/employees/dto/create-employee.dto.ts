@@ -31,7 +31,7 @@ export class CreateEmployeeDto {
   @IsNumber()
   base_salary: number;
 
-  @ApiProperty({ example: '0x123...', description: 'Wallet address for payroll disbursement' })
+  @ApiProperty({ example: '0x123abc...', description: 'Wallet address for payroll disbursement' })
   @IsString()
   @IsNotEmpty()
   wallet_address: string;

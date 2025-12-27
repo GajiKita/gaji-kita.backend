@@ -13,6 +13,8 @@ import { WithdrawsService } from './withdraws.service';
 import { SimulateWithdrawDto } from './dto/simulate-withdraw.dto';
 import { CreateWithdrawRequestDto } from './dto/create-withdraw-request.dto';
 import { ApproveWithdrawRequestDto } from './dto/approve-withdraw-request.dto';
+import { SimulationResponseDto } from './dto/simulation-response.dto';
+import { WithdrawRequestResponseDto } from './dto/withdraw-request-response.dto';
 import { TransactionResponse } from '../blockchain/dto/transaction-response.dto';
 import { BlockchainService } from '../blockchain/blockchain.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -29,12 +31,12 @@ export class WithdrawsController {
   constructor(
     private readonly withdrawsService: WithdrawsService,
     private readonly blockchainService: BlockchainService,
-  ) {}
+  ) { }
 
   @Get('simulate')
   @Roles(ROLES.EMPLOYEE)
   @ApiOperation({ summary: 'Simulate withdrawal fees and amounts' })
-  @ApiResponse({ status: 200, description: 'Return simulation results.' })
+  @ApiResponse({ status: 200, description: 'Return simulation results.', type: SimulationResponseDto })
   @ApiResponse({ status: 403, description: 'Forbidden. Can only simulate for self.' })
   simulate(@Query() simulateDto: SimulateWithdrawDto, @Req() req) {
     if (req.user.id !== simulateDto.employee_id) {
@@ -56,25 +58,25 @@ export class WithdrawsController {
     if (req.user.id !== createRequestDto.employee_id) {
       throw new ForbiddenException('You can only request for yourself.');
     }
-    
+
     // 1. Create the request in DB
     const request = await this.withdrawsService.createRequest(createRequestDto);
-    
+
     // 2. Prepare hex data for withdrawSalary(_cid)
-    const hexData = this.blockchainService.encodeWithdrawSalary(request.ipfs_cid!);
-    
+    const hexData = this.blockchainService.encodeWithdrawSalary((request as any).ipfs_cid);
+
     return {
       to: this.blockchainService.getContractAddress(),
       data: hexData,
       id: request.id,
-      cid: request.ipfs_cid,
+      cid: (request as any).ipfs_cid,
     };
   }
 
   @Post(':id/execute')
   @Roles(ROLES.ADMIN)
   @ApiOperation({ summary: 'Approve and execute a withdrawal request' })
-  @ApiResponse({ status: 201, description: 'The withdrawal has been successfully executed.' })
+  @ApiResponse({ status: 201, description: 'The withdrawal has been successfully executed.', type: WithdrawRequestResponseDto })
   @ApiResponse({ status: 403, description: 'Forbidden. Requires ADMIN role.' })
   @ApiResponse({ status: 404, description: 'Withdrawal request not found.' })
   execute(

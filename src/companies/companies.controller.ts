@@ -10,6 +10,7 @@ import {
 import { CompaniesService } from './companies.service';
 import { CreateCompanyDto } from './dto/create-company.dto';
 import { UpdateCompanyDto } from './dto/update-company.dto';
+import { CompanyResponseDto } from './dto/company-response.dto';
 
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -34,26 +35,26 @@ export class CompaniesController {
     private readonly companiesService: CompaniesService,
     private readonly blockchainService: BlockchainService,
     private readonly pinataService: PinataService,
-  ) {}
+  ) { }
 
   @Post()
   @ApiOperation({ summary: 'Register a new company' })
-  @ApiResponse({ status: 201, description: 'The company has been successfully created.' })
-  @ApiResponse({ status: 403, description: 'Forbidden.' })
+  @ApiResponse({ status: 201, description: 'The company has been successfully created.', type: CompanyResponseDto })
+  @ApiResponse({ status: 403, description: 'Forbidden. Admin only.' })
   create(@Body() createCompanyDto: CreateCompanyDto) {
     return this.companiesService.create(createCompanyDto);
   }
 
   @Get()
   @ApiOperation({ summary: 'List all companies' })
-  @ApiResponse({ status: 200, description: 'Return all companies.' })
+  @ApiResponse({ status: 200, description: 'Return all companies.', type: [CompanyResponseDto] })
   findAll() {
     return this.companiesService.findAll();
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Get company details by ID' })
-  @ApiResponse({ status: 200, description: 'Return company details.' })
+  @ApiResponse({ status: 200, description: 'Return company details.', type: CompanyResponseDto })
   @ApiResponse({ status: 404, description: 'Company not found.' })
   findOne(@Param('id') id: string) {
     return this.companiesService.findOne(id);
@@ -61,7 +62,7 @@ export class CompaniesController {
 
   @Patch(':id')
   @ApiOperation({ summary: 'Update company information' })
-  @ApiResponse({ status: 200, description: 'The company has been successfully updated.' })
+  @ApiResponse({ status: 200, description: 'The company has been successfully updated.', type: CompanyResponseDto })
   @ApiResponse({ status: 404, description: 'Company not found.' })
   update(@Param('id') id: string, @Body() updateCompanyDto: UpdateCompanyDto) {
     return this.companiesService.update(id, updateCompanyDto);

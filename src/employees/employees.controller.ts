@@ -12,6 +12,7 @@ import {
 import { EmployeesService } from './employees.service';
 import { CreateEmployeeDto } from './dto/create-employee.dto';
 import { UpdateEmployeeDto } from './dto/update-employee.dto';
+import { EmployeeResponseDto } from './dto/employee-response.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -32,11 +33,11 @@ export class EmployeesController {
   constructor(
     private readonly employeesService: EmployeesService,
     private readonly blockchainService: BlockchainService,
-  ) {}
+  ) { }
 
   @Post()
   @ApiOperation({ summary: 'Create a new employee record' })
-  @ApiResponse({ status: 201, description: 'The employee has been successfully created.' })
+  @ApiResponse({ status: 201, description: 'The employee has been successfully created.', type: EmployeeResponseDto })
   @ApiResponse({ status: 403, description: 'Forbidden. Requires ADMIN or HR role.' })
   create(@Body() createEmployeeDto: CreateEmployeeDto) {
     return this.employeesService.create(createEmployeeDto);
@@ -46,7 +47,7 @@ export class EmployeesController {
   @Roles(ROLES.ADMIN)
   @ApiOperation({ summary: 'List all employees (ADMIN only)' })
   @ApiQuery({ name: 'companyId', required: false, description: 'Filter employees by company UUID' })
-  @ApiResponse({ status: 200, description: 'Return list of employees.' })
+  @ApiResponse({ status: 200, description: 'Return list of employees.', type: [EmployeeResponseDto] })
   findAll(@Query('companyId') companyId?: string) {
     return this.employeesService.findAll(companyId);
   }
@@ -54,7 +55,7 @@ export class EmployeesController {
   @Get('company/:companyId')
   @Roles(ROLES.ADMIN)
   @ApiOperation({ summary: 'List employees by company ID (ADMIN only)' })
-  @ApiResponse({ status: 200, description: 'Return list of employees for the company.' })
+  @ApiResponse({ status: 200, description: 'Return list of employees for the company.', type: [EmployeeResponseDto] })
   findByCompany(@Param('companyId') companyId: string) {
     return this.employeesService.findByCompanyId(companyId);
   }
@@ -62,7 +63,7 @@ export class EmployeesController {
   @Get('me/company')
   @Roles(ROLES.HR)
   @ApiOperation({ summary: 'List employees for HR current company (HR only)' })
-  @ApiResponse({ status: 200, description: 'Return list of employees for the HR company.' })
+  @ApiResponse({ status: 200, description: 'Return list of employees for the HR company.', type: [EmployeeResponseDto] })
   async findMyCompanyEmployees(@Req() req) {
     const companyId = await this.employeesService.findCompanyByUserId(req.user.id);
     if (!companyId) {
@@ -73,7 +74,7 @@ export class EmployeesController {
 
   @Get(':id')
   @ApiOperation({ summary: 'Get employee details by ID' })
-  @ApiResponse({ status: 200, description: 'Return employee details.' })
+  @ApiResponse({ status: 200, description: 'Return employee details.', type: EmployeeResponseDto })
   @ApiResponse({ status: 404, description: 'Employee not found.' })
   findOne(@Param('id') id: string) {
     return this.employeesService.findOne(id);
@@ -81,7 +82,7 @@ export class EmployeesController {
 
   @Patch(':id')
   @ApiOperation({ summary: 'Update employee information' })
-  @ApiResponse({ status: 200, description: 'The employee has been successfully updated.' })
+  @ApiResponse({ status: 200, description: 'The employee has been successfully updated.', type: EmployeeResponseDto })
   @ApiResponse({ status: 404, description: 'Employee not found.' })
   update(
     @Param('id') id: string,

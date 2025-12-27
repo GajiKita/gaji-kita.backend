@@ -10,6 +10,7 @@ import {
 import { InvestorsService } from './investors.service';
 import { CreateInvestorDto } from './dto/create-investor.dto';
 import { UpdateInvestorDto } from './dto/update-investor.dto';
+import { InvestorResponseDto } from './dto/investor-response.dto';
 
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -36,11 +37,11 @@ export class InvestorsController {
     private readonly investorsService: InvestorsService,
     private readonly blockchainService: BlockchainService,
     private readonly pinataService: PinataService,
-  ) {}
+  ) { }
 
   @Post()
   @ApiOperation({ summary: 'Register a new investor' })
-  @ApiResponse({ status: 201, description: 'The investor has been successfully created.' })
+  @ApiResponse({ status: 201, description: 'The investor has been successfully created.', type: InvestorResponseDto })
   @ApiResponse({ status: 403, description: 'Forbidden. Requires ADMIN role.' })
   create(@Body() createInvestorDto: CreateInvestorDto) {
     return this.investorsService.create(createInvestorDto);
@@ -48,14 +49,14 @@ export class InvestorsController {
 
   @Get()
   @ApiOperation({ summary: 'List all investors' })
-  @ApiResponse({ status: 200, description: 'Return all investors.' })
+  @ApiResponse({ status: 200, description: 'Return all investors.', type: [InvestorResponseDto] })
   findAll() {
     return this.investorsService.findAll();
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Get investor details by ID' })
-  @ApiResponse({ status: 200, description: 'Return investor details.' })
+  @ApiResponse({ status: 200, description: 'Return investor details.', type: InvestorResponseDto })
   @ApiResponse({ status: 404, description: 'Investor not found.' })
   findOne(@Param('id') id: string) {
     return this.investorsService.findOne(id);
@@ -63,7 +64,7 @@ export class InvestorsController {
 
   @Patch(':id')
   @ApiOperation({ summary: 'Update investor information' })
-  @ApiResponse({ status: 200, description: 'The investor has been successfully updated.' })
+  @ApiResponse({ status: 200, description: 'The investor has been successfully updated.', type: InvestorResponseDto })
   @ApiResponse({ status: 404, description: 'Investor not found.' })
   update(
     @Param('id') id: string,
