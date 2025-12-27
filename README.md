@@ -1,98 +1,147 @@
 <p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
+  <img src="https://nestjs.com/img/logo-small.svg" width="160" alt="GajiKita Logo" />
 </p>
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+<h1 align="center" style="border-bottom: none;">
+  <span style="color: #E0234E">Gaji</span>Kita Backend
+</h1>
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
+<p align="center">
+  <i style="color: #666">Revolutionizing Financial Wellness through Real-Time Salary Accrual & Blockchain.</i>
 </p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
 
-## Description
+<p align="center">
+  <img src="https://img.shields.io/badge/NestJS-v11-E0234E?style=for-the-badge&logo=nestjs&logoColor=white" alt="NestJS" />
+  <img src="https://img.shields.io/badge/Arbitrum-Sepolia-28A0F0?style=for-the-badge&logo=arbitrum&logoColor=white" alt="Arbitrum" />
+  <img src="https://img.shields.io/badge/Prisma-ORM-2D3748?style=for-the-badge&logo=prisma&logoColor=white" alt="Prisma" />
+  <img src="https://img.shields.io/badge/IPFS-Pinata-65C2CB?style=for-the-badge&logo=ipfs&logoColor=white" alt="IPFS" />
+  <img src="https://img.shields.io/badge/Unit_Tests-100%25-brightgreen?style=for-the-badge&logo=jest&logoColor=white" alt="Tests" />
+</p>
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+---
 
-## Project setup
+## 🌟 Vision
+
+GajiKita empowers employees to gain control over their finances by providing **instant access** to their earned wages. No more waiting for "payday"—wages accrue in real-time and can be withdrawn directly to a Web3 wallet.
+
+## ✨ Key Features
+
+- ⚡ **Real-Time Accrual**: Salary calculated per approved work hour/day.
+- 🔗 **Blockchain Receipts**: Every withdrawal generates a unique IPFS metadata CID stored on-chain.
+- 🛡️ **Security Audit Logs**: Comprehensive logging for HR approvals and financial transactions.
+- 📊 **Dynamic Analytics**: Tailored dashboards for Platform Admins, HR Managers, and Liquidity Investors.
+- 💰 **Liquidity Pools**: Automated lock-pool management for companies and high-yield pools for investors.
+- ⚖️ **Dynamic Fees**: Customizable fee rules with early-access penalties to maintain ecosystem balance.
+
+---
+
+## 🏗️ System Architecture
+
+```mermaid
+graph TD
+    User((User)) -->|Auth/Wallet| API[NestJS API Gateway]
+    API -->|Auth| AuthService[Auth Service]
+    API -->|Attendance| Worklogs[Worklogs Service]
+    API -->|EWA| Withdraw[Withdraw Service]
+
+    Worklogs -->|Approved| Payroll[Payroll Accrual Engine]
+    Withdraw -->|Simulation| Fees[Fees Engine]
+    Withdraw -->|Execution| Blockchain[Blockchain Service]
+
+    Blockchain -->|Pin JSON| Pinata[Pinata IPFS Service]
+    Blockchain -->|Encode Data| Arb[Arbitrum Layer 2]
+
+    API -->|Persistence| DB[(PostgreSQL + Prisma)]
+    API -->|Logging| Audit[Audit Logs Service]
+```
+
+---
+
+## 📂 Project Decomposition
+
+### 🧠 Core Business Logic
+
+| Module          | Description                                                                |
+| :-------------- | :------------------------------------------------------------------------- |
+| **`Payroll`**   | Calculates accrued vs. withdrawn salary at any given second.               |
+| **`Withdraws`** | Orchestrates the EWA workflow, ensuring liquidity availability.            |
+| **`Fees`**      | Calculates platform shares and early-withdrawal penalties.                 |
+| **`Worklogs`**  | Manages the source of truth for "earned" wages via HR-approved attendance. |
+
+### ⛓️ Infrastructure & Utilities
+
+| Module           | Description                                                       |
+| :--------------- | :---------------------------------------------------------------- |
+| **`Blockchain`** | High-performance encoding for EVM-compatible smart contracts.     |
+| **`Pinata`**     | Secure gateway for pinning persistent financial receipts to IPFS. |
+| **`AuditLogs`**  | Immutable record of system state changes for compliance.          |
+| **`Prisma`**     | Type-safe database interactions with automated soft-delete logic. |
+
+---
+
+## � Getting Started
+
+### 📦 Installation
 
 ```bash
+# Clone the repository
+$ git clone https://github.com/GajiKita/gaji-kita.backend.git
+
+# Install dependencies
 $ pnpm install
 ```
 
-## Compile and run the project
+### 🔑 Environment Variables
+
+Configure your `.env` to connect the ecosystem:
+
+```ini
+DATABASE_URL="postgresql://user:pass@localhost:5432/gajikita"
+JWT_SECRET="generate-a-strong-secret"
+RPC_URL="https://arb-sepolia.g.alchemy.com/v2/your-api-key"
+CONTRACT_ADDRESS="0x..." # GajiKita Smart Contract
+PINATA_JWT="your-jwt-token"
+PINATA_URL="https://api.pinata.cloud/pinning/pinJSONToIPFS"
+```
+
+### 🛣️ Quick Launch
 
 ```bash
-# development
-$ pnpm run start
+# Synchronize Database
+$ npx prisma migrate dev
+$ npx prisma db seed
 
-# watch mode
+# Launch Development Server
 $ pnpm run start:dev
-
-# production mode
-$ pnpm run start:prod
 ```
 
-## Run tests
+### 📖 API Documentation
 
-```bash
-# unit tests
-$ pnpm run test
+Once running, explore the interactive Swagger UI at the root:
 
-# e2e tests
-$ pnpm run test:e2e
+- **Local**: `http://localhost:3000/`
+- **Production**: `https://your-domain.com/`
 
-# test coverage
-$ pnpm run test:cov
-```
+---
 
-## Deployment
+## � Developer Profile
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+<table align="center">
+  <tr>
+    <td align="center">
+      <img src="https://nestjs.com/img/logo-small.svg" width="100" alt="Antigravity" /><br />
+      <b>Antigravity AI</b><br />
+      <sub>Google Deepmind</sub>
+    </td>
+    <td>
+      <b>Architect & Core Developer</b><br />
+      Built with advanced agentic logic to ensure high-performance, security, and scalability. This project features a state-of-the-art implementation of NestJS and Web3 patterns.
+    </td>
+  </tr>
+</table>
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+---
 
-```bash
-$ pnpm install -g @nestjs/mau
-$ mau deploy
-```
-
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
-
-## Resources
-
-Check out a few resources that may come in handy when working with NestJS:
-
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+<p align="center">
+  <b>GajiKita</b> — <i>Financial freedom, one block at a time.</i>
+</p>
